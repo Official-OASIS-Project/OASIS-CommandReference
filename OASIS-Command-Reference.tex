@@ -1,0 +1,222 @@
+% !TeX spellcheck = en_US
+\documentclass[11pt, a4paper]{article}
+\usepackage[left=1.5cm,right=1.5cm,top=2cm,bottom=2cm]{geometry}
+
+\usepackage{helvet}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{multirow}
+\usepackage{cleveref}
+
+\renewcommand{\familydefault}{\sfdefault}\sffamily
+
+\setlength\parindent{0pt}
+
+\definecolor{TBlue}{RGB}{0,101,189}
+\definecolor{TOrange}{RGB}{227,114,34}
+\definecolor{TGreen}{RGB}{162,173,0}
+\definecolor{TCyan}{RGB}{91,197,242}
+
+\newcommand{\Serial}{\raisebox{-1mm}{\resizebox{1cm}{!}{\begin{tcolorbox}[colback=TOrange!50!white, colframe=TOrange, width=2.75cm, arc=3mm, auto outer arc,] \centering\huge{Serial}
+\end{tcolorbox}}}\hspace{3mm}}
+
+\newcommand{\WiFi}{\raisebox{-1mm}{\resizebox{1cm}{!}{\begin{tcolorbox}[colback=TBlue!50!white, colframe=TBlue, width=2.75cm, arc=3mm, auto outer arc,] \centering\huge{WiFi}\vphantom{\huge{Serial}}
+	\end{tcolorbox}}}\hspace{3mm}}
+
+\begin{document}
+\textcolor{TBlue}{\textbf{\huge{OASIS Command Reference}}}
+
+\section*{Communication}
+Communication is either possible over a serial interface (\Serial\hspace{-3mm}) with a baud rate of 2.000.000 or over a WiFi connection using UDP (\WiFi\hspace{-3mm}). For WiFi connect to the network \textit{OASIS v.X.X - DEVICE\_NAME} using the password \textit{Vibration} and send commands to 192.168.4.1:3333 with UDP.\\
+
+\underline{Note}: The symbols \Serial\hspace{-3mm} and \WiFi\hspace{-3mm} denote whether the corresponding interface is usable for each command.
+
+\section*{Wireless Sample Synchronization (WSS)}%
+
+WSS can be enabled via the OASIS-GUI. One device acts as the WSS Source, which initiates the sampling of all WSS Sinks.
+
+\section*{Status LED}%
+
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{c|l} 
+		LED color & OASIS status \\
+		\hline
+		\textcolor{TGreen}{Green} & Normal operation. Ready for commands, no previous error. Buzzer is ON. \\
+		\hline
+		\textcolor{TBlue}{Blue} & System is actively sampling data and transmitting via serial or UDP connection. \\
+		\hline
+		\textcolor{orange}{Yellow} & Finished sampling, but data is still waiting to be sent out. \\
+		\hline
+		\textcolor{cyan}{Cyan} & System is sampling with WSS enabled and is the WSS Source. \\
+		\hline
+		\textcolor{violet}{Purple} & System is in WSS Sink mode and either waiting for the WSS Source or already sampling. \\
+		\hline
+		\textcolor{red}{Red} & \textbf{1 beep}: The command previously sent is invalid. \\
+		& \textbf{3 beeps}: Sampling did not finish in time \\ 
+	\end{tabular}
+	\caption{States described by the status LED}
+	\label{tab:StatusLED}
+\end{table}
+
+\section*{Sampling}%
+\underline{Note}: All sample commands use the set voltage range. Refer to the Configuration section for more details.
+
+\paragraph*{Sample Data}\Serial\WiFi
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.Sample}} (\textcolor{TOrange}{Time in s}, \textcolor{TGreen}{Sampling Frequency in Hz}, \textcolor{TCyan}{Trigger level in V}, \textcolor{violet}{WSS Sync mode})\vspace{3mm}\\
+For normal sampling on 4 channels pass 0 as trigger level. Returns raw byte values. \underline{Conversion is necessary}.\\
+
+Triggered sampling off channel 1 is enabled by providing a trigger level different from zero. Includes pre-trigger data that is sent over the serial interface after the main sampling has finished. The pre-trigger data has to be requested with \textit{Drq()}.\\
+
+WSS Sync modes: 0 = Off, 1 = Source, 2 = Sink
+
+\newpage
+
+\section*{Configuration}%
+\paragraph*{Set Voltage Range}\Serial\WiFi
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.SetVoltageRange}} (\textcolor{TOrange}{ID CH1}, \textcolor{TOrange}{ID CH2}, \textcolor{TOrange}{ID CH3}, \textcolor{TOrange}{ID CH4})\vspace{3mm}\\
+Sets the voltage range on a per-channel basis. Available voltage ranges:
+\begin{table}[h!]
+\centering
+\begin{tabular}{c|c} 
+	\textcolor{TOrange}{Voltage range ID} & Voltage range \\
+	\hline
+	\textcolor{TOrange}{1}${}^\ast$ & $\pm\SI{2.5}{\volt}$ \\
+	\hline
+	\textcolor{TOrange}{2} & $\pm\SI{5}{\volt}$ \\
+	\hline
+	\textcolor{TOrange}{3}${}^\ast$ & $\pm\SI{6.25}{\volt}$ \\
+	\hline
+	\textcolor{TOrange}{4} & $\pm\SI{10}{\volt}$ \\
+	\hline
+	\textcolor{TOrange}{5}${}^\ast$ & $\pm\SI{12.5}{\volt}$ \\
+	\multicolumn{2}{c}{\small{${}^\ast$: Not valid for AD7606-4}}
+\end{tabular}
+\caption{Available voltage ranges}
+\label{tab:VROASIS}
+\end{table}
+
+\paragraph*{Get Voltage Range}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.GetVoltageRange}} ()\vspace{3mm}\\
+Returns the currently configured voltage range for each channel.
+
+\paragraph*{Display device information}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.Info}} ()\vspace{3mm}\\
+Returns information about the device saved in the EEPROM. Refer to \cref{tab:EEPROM} for detailed information.
+
+\paragraph*{Mute the buzzer}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.Mute}} ()\vspace{3mm}\\
+Completely mutes the integrated buzzer. Setting persists after reset/power off.
+
+\paragraph*{Unmute the buzzer}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.Unmute}} ()\vspace{3mm}\\
+Unmutes the integrated buzzer. Setting persists after reset/power off.
+
+\paragraph*{Enable WiFi Access Point}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.EnableWiFi}} ()\vspace{3mm}\\
+Enables the WiFi Access Point. Necessary for WiFi communication. Setting persists after reset/power off.
+
+\paragraph*{Disable WiFi Access Point}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.DisableWiFi}} ()\vspace{3mm}\\
+Disables the WiFi Access Point. This is necessary for sampling over the serial interface. Disabling the WiFi will be automatically enforced by the firmware when data sampling over the Serial interface is requested and the WiFi Access Point is turned on. Setting persists after reset/power off.
+
+\newpage
+
+\section*{Debug}%
+
+\paragraph*{WiFi Connection}\Serial
+
+\vspace{3mm}
+\textcolor{TBlue}{\textit{OASIS.WiFiDebug}} ()\vspace{3mm}\\
+Lists all connected devices with their MAC and IP address and sends a UDP package to each client.
+
+\section*{EEPROM map}
+\begin{table}[h!]
+	\centering
+	\begin{tabular}{c|c|c|c|c|c|c|c|c}
+		& 0x\_0 & 0x\_1 & 0x\_2 & 0x\_3 & 0x\_4 & 0x\_5 & 0x\_6 & 0x\_7 \\
+		& 0x\_8 & 0x\_9 & 0x\_A & 0x\_B & 0x\_C & 0x\_D & 0x\_E & 0x\_F \\
+		\hline
+		\multirow{2}{*}{0x0\_} & MUTE & WIFI\_EN & \multicolumn{6}{c}{\textbf{RESERVED}} \\
+		\cline{2-9}
+		& HW\_VER\_0 & HW\_VER\_1 & FW\_VER\_0 & FW\_VER\_1 & ADC\_BIT & F\_TEDS & F\_WSS & \textbf{RESERVED}\\
+		\hline
+		\multirow{2}{*}{0x1\_} & \multicolumn{8}{c}{DEVICE\_NAME[0:7]} \\
+		\cline{2-9}
+		& \multicolumn{8}{c}{DEVICE\_NAME[8:15]}\\
+		\hline
+		\multirow{2}{*}{0x2\_} & \multicolumn{8}{c}{DEVICE\_NAME[16:23]} \\
+		\cline{2-9}
+		 & \multicolumn{8}{c}{\textbf{RESERVED}} \\
+		\hline
+	\end{tabular}
+	\caption{OASIS EEPROM map}
+	\label{tab:EEPROM}
+\end{table}\vspace{-0.5cm}
+\subsection*{Configuration Bytes}
+\begin{minipage}{0.5\textwidth}
+	\paragraph{MUTE (0x00)} Mute all sounds - Type: Bit
+	
+	\vspace{0.2cm}\hspace{0.5cm}\begin{tabular}{c|l}
+		Possible values & Function \\
+		\hline
+		0b0 & Sound is \textbf{enabled}.\\
+		0b1 & Sound is \textbf{disabled}.
+	\end{tabular}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+	\paragraph{WIFI\_EN (0x01)} Enable WiFi Connectivity - Type: Bit
+	
+	\vspace{0.2cm}\hspace{0.5cm}\begin{tabular}{c|l}
+		Possible values & Function \\
+		\hline
+		0b0 & WiFi is \textbf{disabled}.\\
+		0b1 & WiFi is \textbf{enabled}.
+	\end{tabular}
+\end{minipage}
+
+\paragraph{RESERVED (0x02 - 0x07)} Reserved for future use as configuration bits
+
+\subsection*{Device Information}
+\paragraph{HW\_VER\_X (0x08 - 0x09)} Hardware Version - Type: Byte
+
+HW\_VER\_0 contains the major hardware revision and HW\_VER\_1 the minor revision; Version = Major.Minor
+
+\paragraph{FW\_VER\_X (0x0A - 0x0B)} Firmware Version - Type: Byte
+
+FW\_VER\_0 contains the major firmware version and FW\_VER\_1 the minor version; Version = Major.Minor
+
+\paragraph{ADC\_BIT (0x0C)} Number of resolution bits of the used ADC - Type: Byte
+
+\paragraph{F\_TEDS (0x0D)} Hardware Feature: TEDS - Type: Bit
+
+Denotes whether the device is capable of reading TEDS data (1=yes, 0=no)
+
+\paragraph{F\_WSS (0x0E)} Hardware Feature: Wireless Sample Synchronization - Type: Bit
+
+Denotes whether the device is capable of synchronizing its sampling with other devices (1=yes, 0=no)
+
+\paragraph{RESERVED (0x0F)} Reserved for future hardware feature indication
+
+\paragraph{DEVICE\_NAME[0:23] (0x10 - 0x27)} Custom device name - Type: Char
+
+Stores a custom device name. First character is saved in DEVICE\_NAME[0] (0x10). Unused bytes are marked with the value 0x00.
+
+\end{document}
